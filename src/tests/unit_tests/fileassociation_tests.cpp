@@ -90,6 +90,53 @@ class XdgAssociationEnvironment {
 
 } // namespace
 
+UTEST( Applications, resolvesMimeAliasesForHandlersAndPreferences ) {
+	XdgAssociationEnvironment environment;
+	ASSERT_TRUE( environment.initialize() );
+	const auto& config = environment.config;
+	const auto& data = environment.data;
+	const std::string canonical = "application/x-msdownload";
+	const std::string alias = "application/x-ms-dos-executable";
+	ASSERT_TRUE( FileSystem::makeDir( data + "/mime", true ) );
+	ASSERT_TRUE( FileSystem::fileWrite( data + "/mime/aliases", alias + ' ' + canonical + '\n' ) );
+	ASSERT_TRUE( FileSystem::fileWrite(
+		data + "/applications/wine.desktop",
+		"[Desktop Entry]\nType=Application\nName=Wine\nExec=wine start /unix %f\n"
+		"NoDisplay=true\nMimeType=" +
+			alias + ";\n" ) );
+	const std::string viewerEntry =
+		"[Desktop Entry]\nType=Application\nName=Viewer\nExec=viewer %f\n";
+	ASSERT_TRUE( FileSystem::fileWrite( data + "/applications/viewer.desktop", viewerEntry ) );
+	ASSERT_TRUE( FileSystem::fileWrite( data + "/applications/blocked.desktop",
+										viewerEntry + "MimeType=" + canonical + ";\n" ) );
+	Applications::invalidateCache();
+	const auto file = URI::fromFSPath( environment.root.path + "setup.exe" );
+	const auto installed = Applications::forFile( file, { canonical } );
+	ASSERT_EQ( 2u, installed.size() );
+	EXPECT_TRUE( std::any_of( installed.begin(), installed.end(),
+							  []( const Application& app ) { return app.id == "wine.desktop"; } ) );
+
+	ASSERT_TRUE(
+		FileSystem::fileWrite( config + "/mimeapps.list", "[Default Applications]\n" + alias +
+															  "=viewer.desktop;\n"
+															  "[Removed Associations]\n" +
+															  alias + "=blocked.desktop;\n" ) );
+	Applications::invalidateCache();
+	const auto handlers = Applications::forFile( file, { canonical, alias } );
+	ASSERT_EQ( 2u, handlers.size() );
+	EXPECT_STDSTREQ( "viewer.desktop", handlers[0].id );
+	EXPECT_STDSTREQ( "wine.desktop", handlers[1].id );
+	EXPECT_STDSTREQ( "wine start /unix %f", handlers[1].exec );
+
+	// A new default written with the canonical type takes precedence over the old alias key.
+	std::string error;
+	ASSERT_EQ( FileAssociation::DefaultResult::Applied,
+			   FileAssociation::setDefaultApplication( handlers[1], "exe", canonical, error ) );
+	const auto preferred = Applications::defaultFor( file, { alias } );
+	ASSERT_TRUE( preferred );
+	EXPECT_STDSTREQ( "wine.desktop", preferred->id );
+}
+
 UTEST( FileAssociation, changesInstalledDefaultWithoutRewritingDesktopEntry ) {
 	XdgAssociationEnvironment environment;
 	ASSERT_TRUE( environment.initialize() );

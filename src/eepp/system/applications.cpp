@@ -97,6 +97,7 @@ std::string fileURI( const std::string& path ) {
 #if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
 struct Applications::Registry {
 	std::mutex mutex;
+	UnorderedMap<std::string, std::string> mimeAliases;
 	UnorderedMap<std::string, Application> apps;
 	UnorderedMap<std::string, std::vector<std::string>> byMime;
 	UnorderedMap<std::string, std::vector<std::string>> defaults;
@@ -104,11 +105,18 @@ struct Applications::Registry {
 	bool loaded{ false };
 
 	void load();
+
+	const std::string& canonicalMime( const std::string& type ) const;
 };
 
 Applications::Registry& Applications::registry() {
 	static Registry data;
 	return data;
+}
+
+const std::string& Applications::Registry::canonicalMime( const std::string& type ) const {
+	auto found = mimeAliases.find( type );
+	return found == mimeAliases.end() ? type : found->second;
 }
 
 void Applications::Registry::load() {
@@ -117,8 +125,23 @@ void Applications::Registry::load() {
 	loaded = true;
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 	auto dataDirs = Sys::getDataSearchPaths();
-	for ( auto& dir : dataDirs )
+	for ( auto& dir : dataDirs ) {
 		FileSystem::dirAddSlashAtEnd( dir );
+		std::string aliases;
+		if ( !FileSystem::fileGet( dir + "mime/aliases", aliases ) )
+			continue;
+		for ( auto line : String::split( std::string_view( aliases ), '\n' ) ) {
+			if ( line.empty() || line.front() == '#' )
+				continue;
+			const auto separator = line.find( ' ' );
+			if ( separator == 0 || separator == std::string_view::npos ||
+				 separator + 1 == line.size() )
+				continue;
+			// shared-mime-info stores alias and canonical type; earlier XDG directories win.
+			mimeAliases.try_emplace( std::string( line.substr( 0, separator ) ),
+									 std::string( line.substr( separator + 1 ) ) );
+		}
+	}
 	// Earlier directories win: desktop ids already seen are skipped.
 	for ( const auto& base : dataDirs ) {
 		std::string dir = base + "applications/";
@@ -143,7 +166,7 @@ void Applications::Registry::load() {
 			apps.emplace( file, std::move( app ) );
 			// NoDisplay apps still handle types (they are just not shown in menus).
 			for ( const auto& mime : splitList( entry["MimeType"] ) )
-				byMime[mime].push_back( file );
+				byMime[canonicalMime( mime )].push_back( file );
 		}
 	}
 	// mimeapps.list: user config first, so its defaults come first.
@@ -164,17 +187,25 @@ void Applications::Registry::load() {
 		if ( !FileSystem::fileGet( list, data ) )
 			continue;
 		for ( const auto& group : { "Default Applications", "Added Associations" } ) {
-			for ( const auto& [mime, value] : readGroup( data, group ) ) {
-				auto& ids = defaults[mime];
-				for ( const auto& id : splitList( value ) ) {
-					if ( std::find( ids.begin(), ids.end(), id ) == ids.end() )
-						ids.push_back( id );
+			const auto preferences = readGroup( data, group );
+			// Prefer canonical keys within a group while keeping file precedence.
+			for ( bool useAliases : { false, true } ) {
+				for ( const auto& [mime, value] : preferences ) {
+					const auto& canonical = canonicalMime( mime );
+					const bool isAlias = canonical != mime;
+					if ( isAlias != useAliases )
+						continue;
+					auto& ids = defaults[canonical];
+					for ( auto& id : splitList( value ) ) {
+						if ( std::find( ids.begin(), ids.end(), id ) == ids.end() )
+							ids.push_back( std::move( id ) );
+					}
 				}
 			}
 		}
 		for ( const auto& [mime, value] : readGroup( data, "Removed Associations" ) ) {
 			for ( const auto& id : splitList( value ) )
-				removed[mime].push_back( id );
+				removed[canonicalMime( mime )].push_back( id );
 		}
 	}
 #endif
@@ -205,18 +236,14 @@ std::vector<Application> Applications::forFile( const URI&,
 		out.push_back( app->second );
 	};
 	// Preferences of the exact type and its parents first, then every handler.
-	for ( const auto& type : mimeTypes ) {
-		auto defaults = data.defaults.find( type );
-		if ( defaults != data.defaults.end() ) {
-			for ( const auto& id : defaults->second )
-				addId( id, type );
-		}
-	}
-	for ( const auto& type : mimeTypes ) {
-		auto handlers = data.byMime.find( type );
-		if ( handlers != data.byMime.end() ) {
-			for ( const auto& id : handlers->second )
-				addId( id, type );
+	for ( const auto* associations : { &data.defaults, &data.byMime } ) {
+		for ( const auto& mime : mimeTypes ) {
+			const auto& type = data.canonicalMime( mime );
+			auto handlers = associations->find( type );
+			if ( handlers != associations->end() ) {
+				for ( const auto& id : handlers->second )
+					addId( id, type );
+			}
 		}
 	}
 	return out;
@@ -235,6 +262,7 @@ void Applications::invalidateCache() {
 #if EE_PLATFORM != EE_PLATFORM_MACOS && EE_PLATFORM != EE_PLATFORM_WIN
 	auto& data = registry();
 	std::lock_guard<std::mutex> lock( data.mutex );
+	data.mimeAliases.clear();
 	data.apps.clear();
 	data.byMime.clear();
 	data.defaults.clear();
