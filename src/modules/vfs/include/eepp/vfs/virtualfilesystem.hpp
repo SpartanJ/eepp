@@ -118,6 +118,14 @@ class EE_VFS_API VirtualFileSystem {
 	VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options = {},
 						  CancellationToken token = {} );
 
+	/** No-overwrite rename with a fallback for POSIX local siblings. When native no-replace
+	 * rename is unavailable, reserve the destination exclusively and rename over that reservation.
+	 * Other writers must leave the reservation alone. It is visible briefly and may remain after
+	 * a crash. Use rename() if the destination must be published atomically without a reservation.
+	 */
+	VFSTask<void> renameWithFallback( const URI& from, const URI& to,
+									  CancellationToken token = {} );
+
 	/** Provider-level canonicalization (symlinks, aliases). URIs are never canonicalized
 	 * implicitly. */
 	VFSTask<URI> canonicalize( const URI& uri, CancellationToken token = {} );

@@ -190,6 +190,20 @@ VFSTask<void> VirtualFileSystem::rename( const URI& from, const URI& to,
 	EE_VFS_FORWARD( void, from, rename( from, to, options, std::move( token ) ) );
 }
 
+VFSTask<void> VirtualFileSystem::renameWithFallback( const URI& from, const URI& to,
+													 CancellationToken token ) {
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	if ( from.getScheme() == "file" && from.getParent() == to.getParent() ) {
+		auto provider = providerFor( from );
+		if ( provider && typeid( *provider ) == typeid( LocalProvider ) ) {
+			return static_cast<LocalProvider&>( *provider )
+				.rename( from, to, {}, std::move( token ), true );
+		}
+	}
+#endif
+	return rename( from, to, {}, std::move( token ) );
+}
+
 VFSTask<URI> VirtualFileSystem::canonicalize( const URI& uri, CancellationToken token ) {
 	EE_VFS_FORWARD( URI, uri, canonicalize( uri, std::move( token ) ) );
 }

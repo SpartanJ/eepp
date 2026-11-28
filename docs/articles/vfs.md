@@ -303,6 +303,12 @@ Readers can briefly see the empty placeholder, a crash can leave it behind, and 
 deliberately overwrites the placeholder in that window is itself replaced. No link/unlink move of
 an arbitrary public source, or existence-check-then-replacing-rename fallback, is used.
 
+For user-initiated renames of local siblings, `renameWithFallback()` can reserve a missing
+destination with an exclusive placeholder when the POSIX filesystem lacks native no-replace rename,
+as on some FUSE NTFS mounts. It renames the source over that reservation without copying the
+contents. The reservation is briefly visible and can survive a crash. Other writers must leave it
+alone until the operation finishes. Use `rename()` when the destination must appear atomically.
+
 Temporary publication assumes other writers cannot replace the writer's temporary pathname.
 Exclusive creation prevents initial name collisions, but does not reserve the name until rename
 or link/unlink publication. Atomic writes and copies therefore do not authenticate the published

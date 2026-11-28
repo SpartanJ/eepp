@@ -36,10 +36,10 @@ class OpenWithDialog : public std::enable_shared_from_this<OpenWithDialog> {
 	using Command = std::function<void( const std::vector<URI>& )>;
 
 	static void show( App& app, std::vector<URI> uris, std::vector<Application> applications,
-					  Open open, Command command );
+					  bool folders, Open open, Command command );
 
 	OpenWithDialog( App& app, std::vector<URI> uris, std::vector<Application> applications,
-					Open open, Command command );
+					bool folders, Open open, Command command );
 
   private:
 	struct FileType {
@@ -80,6 +80,7 @@ class OpenWithDialog : public std::enable_shared_from_this<OpenWithDialog> {
 	UIPushButton* mOpenButton{ nullptr };
 	UIPushButton* mCommandButton{ nullptr };
 	UIPushButton* mDefaultButton{ nullptr };
+	bool mFolders;
 	bool mReady{ false };
 	bool mBusy{ false };
 };

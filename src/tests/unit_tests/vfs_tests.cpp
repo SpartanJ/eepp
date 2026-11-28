@@ -2436,6 +2436,25 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	EXPECT_EQ( VFSErrorCode::Unsupported,
 			   codeOf( waitFor( provider.rename( symlink, destination, {}, {} ) ) ) );
 
+	VirtualFileSystem::Config config;
+	config.registerDefaultProviders = false;
+	VirtualFileSystem vfs( config );
+	vfs.registerProvider( std::make_shared<LocalProvider>( scheduler ) );
+	ASSERT_TRUE( waitFor( vfs.renameWithFallback( source, destination ) ) );
+	EXPECT_FALSE( FileSystem::fileExists( source.getFSPath() ) );
+	EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+	auto renamed = waitFor( vfs.stat( destination ) );
+	ASSERT_TRUE( renamed );
+	EXPECT_TRUE( before.value().revision.matches( renamed.value().revision ) );
+	EXPECT_EQ( VFSErrorCode::AlreadyExists,
+			   codeOf( waitFor( vfs.renameWithFallback( directory, destination ) ) ) );
+	EXPECT_STDSTREQ( "source", readString( vfs, destination ) );
+	ASSERT_TRUE( waitFor( vfs.renameWithFallback( symlink, source ) ) );
+	EXPECT_TRUE( FileSystem::isDirectory( source.getFSPath() ) );
+	ASSERT_TRUE( waitFor( vfs.renameWithFallback( directory, symlink ) ) );
+	EXPECT_TRUE( FileSystem::isDirectory( symlink.getFSPath() ) );
+	EXPECT_FALSE( FileSystem::isDirectory( directory.getFSPath() ) );
+
 	// Force private temporary cleanup to fail after publication. Neither a copy nor a
 	// copy/remove move may roll back the destination or delete the public source afterward.
 	auto denyUnlink = pool->submit( [] {
@@ -2456,10 +2475,6 @@ UTEST( VFSLocal, unavailableNoReplacePrimitiveUsesSafeFilePublication ) {
 	} );
 	auto denied = std::move( denyUnlink ).get();
 	ASSERT_TRUE( denied && *denied );
-	VirtualFileSystem::Config config;
-	config.registerDefaultProviders = false;
-	VirtualFileSystem vfs( config );
-	vfs.registerProvider( std::make_shared<LocalProvider>( scheduler ) );
 	for ( bool move : { false, true } ) {
 		TempDir cleanup;
 		const URI source = cleanup.uri().withAppendedSegment( "source" );

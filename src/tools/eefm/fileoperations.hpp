@@ -120,8 +120,16 @@ class FileOperations {
 	bool hasRunningOperations() const;
 
   private:
+	struct OpenWithApplications {
+		std::vector<Application> registered;
+		std::string ecode;
+	};
+
 	void buildContextMenu( FileTab* tab, bool background, Vector2f position,
-						   std::vector<Application> apps );
+						   OpenWithApplications apps );
+
+	void addOpenWithMenu( UIPopUpMenu* menu, std::vector<URI> uris, bool folders,
+						  OpenWithApplications apps );
 
 	enum class TransferKind : Uint8 { Copy, Move, Extract, Compress };
 

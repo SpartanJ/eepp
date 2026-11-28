@@ -66,23 +66,24 @@ class ApplicationListModel final : public Model {
 } // namespace
 
 void OpenWithDialog::show( App& app, std::vector<URI> uris, std::vector<Application> applications,
-						   Open open, Command command ) {
+						   bool folders, Open open, Command command ) {
 	if ( uris.empty() )
 		return;
 	auto dialog =
 		std::make_shared<OpenWithDialog>( app, std::move( uris ), std::move( applications ),
-										  std::move( open ), std::move( command ) );
+										  folders, std::move( open ), std::move( command ) );
 	dialog->populate();
 }
 
 OpenWithDialog::OpenWithDialog( App& app, std::vector<URI> uris,
-								std::vector<Application> applications, Open open,
+								std::vector<Application> applications, bool folders, Open open,
 								Command command ) :
 	mApp( app ),
 	mUris( std::move( uris ) ),
 	mApplications( std::move( applications ) ),
 	mOpen( std::move( open ) ),
-	mCommand( std::move( command ) ) {}
+	mCommand( std::move( command ) ),
+	mFolders( folders ) {}
 
 void OpenWithDialog::populate() {
 	mBox = mApp.ui()
@@ -101,6 +102,11 @@ void OpenWithDialog::populate() {
 	mAlways->setVisible( false );
 	mDefaultButton->setVisible( true );
 #endif
+	if ( mFolders ) {
+		mAlways->setVisible( false );
+		mDefaultButton->setVisible( false );
+		mHint->setVisible( false );
+	}
 	mList->setModel( std::make_shared<ApplicationListModel>( mApp, mApplications ) );
 	mList->setOnUpdateCellCb( []( UITableCell* cell, Model* ) {
 		static const std::string loadedClass( "application_icon_loaded" );
@@ -184,9 +190,13 @@ void OpenWithDialog::loadFileType() {
 		names.emplace_back( uri.getLastPathSegment() );
 	// Own only the filenames across the worker handoff; no VFS metadata or downloads are needed.
 	mApp.pool()
-		->submit( [names = std::move( names )] {
+		->submit( [names = std::move( names ), folders = mFolders] {
 			FileType type;
 			auto& database = MimeDatabase::instance();
+			if ( folders ) {
+				type.description = database.description( "inode/directory", names.front() );
+				return type;
+			}
 			type.mimeType = database.typeForName( names.front() );
 			type.extension = FileAssociation::normalizeExtension(
 				FileSystem::fileNameSplitExtension( names.front() ).second );
@@ -249,7 +259,7 @@ void OpenWithDialog::updateActions() {
 	mCommandButton->setEnabled( !mBusy );
 	mAlways->setEnabled( mReady && mType.canSetDefault && selected && !mBusy );
 	mDefaultButton->setEnabled( mReady && mType.canSetDefault && selected && !mBusy );
-	if ( !mReady )
+	if ( !mReady || mFolders )
 		return;
 	if ( !mType.canSetDefault ) {
 		mHint->setText( mApp.ui()->i18n(

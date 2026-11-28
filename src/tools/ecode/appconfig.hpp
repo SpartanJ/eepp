@@ -367,6 +367,8 @@ class AppConfig {
 		tabWidgetTypes.erase( type );
 	}
 
+	bool isRestoringDocuments() const { return editorsToLoad > 0; }
+
   protected:
 	Int64 editorsToLoad{ 0 };
 

@@ -20,9 +20,11 @@
 #include <algorithm>
 #include <args/args.hxx>
 #include <array>
+#include <cctype>
 #include <charconv>
 #include <cstdlib>
 #include <cstring>
+#include <eepp/core/uri.hpp>
 #include <eepp/graphics/fontfamily.hpp>
 #include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/locale.hpp>
@@ -5463,6 +5465,9 @@ void App::init( InitParameters& params, LogFileFamily& logFileFamily ) {
 		}
 #endif
 
+		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
+		mFileToOpenReadOnly = params.readOnly;
+
 		if ( params.terminal && params.files.empty() && params.fileToOpen.empty() ) {
 			mTerminalMode = true;
 			mTerminalModeSidePanelWasVisible = mConfig.ui.showSidePanel;
@@ -5482,9 +5487,6 @@ void App::init( InitParameters& params, LogFileFamily& logFileFamily ) {
 		if ( params.zenMode )
 			setZenMode( true );
 
-		mFileToOpen = FileSystem::expandTilde( params.fileToOpen );
-		mFileToOpenReadOnly = params.readOnly;
-
 		Log::info( "Init ProjectTreeView took: %.2f ms",
 				   globalClock.getElapsedTime().asMilliseconds() );
 
@@ -5494,6 +5496,10 @@ void App::init( InitParameters& params, LogFileFamily& logFileFamily ) {
 				mFileToOpen.empty()
 					? "https://raw.githubusercontent.com/SpartanJ/eepp/develop/README.md"
 					: mFileToOpen );
+#else
+		// The session restore callback handles the request when saved editors are still loading.
+		if ( !mConfig.isRestoringDocuments() )
+			loadFileDelayed();
 #endif
 
 		if ( mConfig.workspace.checkForUpdatesAtStartup )
@@ -5555,6 +5561,37 @@ static void exportLanguages( const std::string& path, const std::string& langs,
 	}
 }
 
+static bool resolveFileArgument( std::string& path ) {
+	const std::string_view argument( path );
+	if ( !String::istartsWith( argument, "file:/"sv ) )
+		return true;
+
+	// URI decoding stops at a malformed escape. Reject it before it can shorten the path.
+	for ( auto pos = path.find( '%' ); pos != std::string::npos; pos = path.find( '%', pos + 3 ) ) {
+		if ( path.size() - pos < 3 ||
+			 !std::isxdigit( static_cast<unsigned char>( path[pos + 1] ) ) ||
+			 !std::isxdigit( static_cast<unsigned char>( path[pos + 2] ) ) )
+			return false;
+	}
+
+	const URI uri( path );
+	const auto& uriPath = uri.getPath();
+	if ( uriPath.empty() || uriPath.front() != '/' || uriPath.find( '\0' ) != std::string::npos ||
+		 !uri.getUserInfo().empty() || uri.getSpecifiedPort() != 0 )
+		return false;
+
+#if EE_PLATFORM != EE_PLATFORM_WIN
+	if ( argument.substr( 6 ).starts_with( '/' ) ) {
+		auto authority = argument.substr( 7 );
+		authority = authority.substr( 0, authority.find( '/' ) );
+		if ( !authority.empty() && !String::iequals( authority, "localhost"sv ) )
+			return false;
+	}
+#endif
+	path = uri.getFSPath();
+	return true;
+}
+
 } // namespace ecode
 
 using namespace ecode;
@@ -5564,16 +5601,13 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 		"ecode", "Environment: set ECODE_CONFIG_PATH to use another configuration directory. "
 				 "--profile takes precedence." );
 	args::HelpFlag help( parser, "help", "Display this help menu", { 'h', '?', "help" } );
-	args::PositionalList<std::string> fileOrFolderPos( parser, "file_or_folder",
-													   "The file/s or folder/s path to open" );
-	args::ValueFlag<std::string> file(
-		parser, "file",
-		"The file path to open. A file path can also contain the line number and column to "
-		"position the cursor when the file is opened. The format is: "
-		"$FILEPATH:$LINE_NUMBER:$COLUMN. Both line number and column are optional (line number can "
-		"be provided without column too).",
-		{ 'f', "file" } );
-	args::ValueFlag<std::string> folder( parser, "folder", "The folder path to open",
+	args::PositionalList<std::string> fileOrFolderPos(
+		parser, "file_or_folder", "File or folder paths or file:// URIs to open" );
+	args::ValueFlag<std::string> file( parser, "file",
+									   "The file path or file:// URI to open. Append :LINE or "
+									   ":LINE:COLUMN to position the cursor.",
+									   { 'f', "file" } );
+	args::ValueFlag<std::string> folder( parser, "folder", "The folder path or file:// URI to open",
 										 { "folder" } );
 	args::ValueFlag<Float> pixelDensityConf( parser, "pixel-density",
 											 "Set default application pixel density",
@@ -5762,6 +5796,20 @@ EE_MAIN_FUNC int main( int argc, char* argv[] ) {
 	params.redirectToFirstInstance = redirectToFirstInstance.Get() || params.zenMode;
 	params.diff = diff.Get();
 	params.readOnly = readOnly.Get();
+
+	const auto resolveArgument = []( std::string& path ) {
+		if ( resolveFileArgument( path ) )
+			return true;
+		Sys::windowAttachConsole();
+		std::cerr << "error: invalid or unsupported file URI: " << path << '\n';
+		return false;
+	};
+	for ( auto& path : params.files ) {
+		if ( !resolveArgument( path ) )
+			return EXIT_FAILURE;
+	}
+	if ( !resolveArgument( params.fileToOpen ) )
+		return EXIT_FAILURE;
 
 	if ( params.diff ) {
 		if ( params.files.size() != 2 ) {

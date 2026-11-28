@@ -24,7 +24,7 @@ class FileWriter;
  * Revisions are derived from device, inode (file index), modification time and size, so both
  * in-place edits and atomic replacements are detected. Overwrite renames reject matching native
  * file identities, including hardlinks, with InvalidOperation and retain both names.
- * Without native no-replace rename, public no-overwrite renames return Unsupported. Only the
+ * Without native no-replace rename, strict no-overwrite renames return Unsupported. Only the
  * internal writer's exclusively owned temporary files may use hard-link publication and unlink.
  * POSIX recursive removal is descriptor-relative and does not follow replaced child symlinks;
  * the Windows backend currently uses the VFS's generic pathname traversal instead.
@@ -91,6 +91,11 @@ class EE_VFS_API LocalProvider : public VFSProvider {
 	friend class detail::FileWriter;
 
 #if EE_PLATFORM != EE_PLATFORM_WIN
+	friend class VirtualFileSystem;
+
+	VFSTask<void> rename( const URI& from, const URI& to, const RenameOptions& options,
+						  CancellationToken token, bool allowFallback );
+
 	/** Only FileWriter may publish its exclusive temporary sibling through link/unlink. This
 	 * must never remove an arbitrary public source name, which another writer could replace. */
 	VFSTask<void> publishTemporary( const URI& from, const URI& to, CancellationToken token );

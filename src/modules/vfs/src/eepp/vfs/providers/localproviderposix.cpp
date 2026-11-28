@@ -895,8 +895,51 @@ VFSTask<void> LocalProvider::remove( const URI& uri, const RemoveOptions& option
 
 namespace {
 
-/** Publish without replacing any destination, including one created concurrently. */
-VFSResult<void> renameNoReplace( const std::string& from, const std::string& to ) {
+VFSResult<void> renameOverReservation( const std::string& from, const std::string& to,
+									   bool directory ) {
+	struct stat reserved;
+	if ( directory ) {
+		if ( ::mkdir( to.c_str(), 0700 ) != 0 )
+			return Err( errnoError( to, "Cannot reserve rename destination" ) );
+		if ( ::lstat( to.c_str(), &reserved ) != 0 )
+			return Err( errnoError( to, "Cannot identify rename reservation" ) );
+	} else {
+		const int fd =
+			::open( to.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600 );
+		if ( fd < 0 )
+			return Err( errnoError( to, "Cannot reserve rename destination" ) );
+		const int result = ::fstat( fd, &reserved );
+		const int error = errno;
+		::close( fd );
+		if ( result != 0 )
+			return Err( errnoError( to, "Cannot identify rename reservation", error ) );
+	}
+	// Only replace or clean up the reservation while its identity still matches. POSIX cannot
+	// make this check part of rename() or removal, so other writers must leave that name alone.
+	auto stillReserved = [&] {
+		struct stat current;
+		return ::lstat( to.c_str(), &current ) == 0 && current.st_dev == reserved.st_dev &&
+			   current.st_ino == reserved.st_ino;
+	};
+	if ( !stillReserved() ) {
+		return Err( VFSError( VFSErrorCode::ChangedExternally, URI::fromFSPath( to ),
+							  "Rename reservation changed externally" ) );
+	}
+	if ( ::rename( from.c_str(), to.c_str() ) == 0 )
+		return Ok();
+	const int renameError = errno;
+	if ( stillReserved() ) {
+		const int cleaned = directory ? ::rmdir( to.c_str() ) : ::unlink( to.c_str() );
+		if ( cleaned != 0 && errno != ENOENT ) {
+			return Err( errnoError( to, "Rename failed and reservation could not be removed" ) );
+		}
+	}
+	return Err( errnoError( from, "rename failed", renameError ) );
+}
+
+/** Try the native no-replace operation first. */
+VFSResult<void> renameNoReplace( const std::string& from, const std::string& to,
+								 bool allowFallback ) {
 	int result = -1;
 	errno = ENOTSUP;
 #if defined( __linux__ ) && defined( SYS_renameat2 )
@@ -921,6 +964,12 @@ VFSResult<void> renameNoReplace( const std::string& from, const std::string& to 
 		return Err( errnoError( to, "Rename destination already exists", EEXIST ) );
 	if ( errno != ENOENT )
 		return Err( errnoError( to, "Cannot check rename destination" ) );
+	if ( allowFallback ) {
+		struct stat source;
+		if ( ::lstat( from.c_str(), &source ) != 0 )
+			return Err( errnoError( from, "Cannot check rename source" ) );
+		return renameOverReservation( from, to, S_ISDIR( source.st_mode ) );
+	}
 	return Err( VFSError( VFSErrorCode::Unsupported, URI::fromFSPath( from ),
 						  "Native no-replace rename is unavailable" ) );
 }
@@ -944,6 +993,11 @@ VFSResult<bool> sameNativeFile( const std::string& from, const std::string& to )
 
 VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
 									 CancellationToken token ) {
+	return rename( from, to, options, std::move( token ), false );
+}
+
+VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const RenameOptions& options,
+									 CancellationToken token, bool allowFallback ) {
 	if ( token.isCancellationRequested() )
 		return readyError<void>( cancelledError( from ) );
 	auto fromPath = toNativePath( from );
@@ -963,10 +1017,10 @@ VFSTask<void> LocalProvider::rename( const URI& from, const URI& to, const Renam
 		VFSError( VFSErrorCode::Unsupported, from,
 				  "The source and destination are on different file systems" ),
 		guarded<void>( native, std::move( token ),
-					   [to = target, overwrite = options.overwrite](
-						   const std::string& path ) -> VFSResult<void> {
+					   [to = target, overwrite = options.overwrite,
+						allowFallback]( const std::string& path ) -> VFSResult<void> {
 						   if ( !overwrite )
-							   return renameNoReplace( path, to );
+							   return renameNoReplace( path, to, allowFallback );
 						   auto same = sameNativeFile( path, to );
 						   if ( !same )
 							   return Err( std::move( same ).error() );
@@ -1007,27 +1061,9 @@ VFSTask<void> LocalProvider::publishTemporary( const URI& from, const URI& to,
 				const int linkError = errno;
 				if ( linkError != EPERM && linkError != ENOTSUP && linkError != EOPNOTSUPP )
 					return Err( errnoError( path, "No-replace publication failed", linkError ) );
-				// No hard links on this file system (Haiku's BFS, FAT). Reserve the destination
-				// with an exclusive placeholder, which fails like linkat() if anything exists,
-				// then rename the temporary over it. Readers may briefly see the empty
-				// placeholder, and a crash can leave it behind.
-				const int placeholder = ::open(
-					to.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600 );
-				if ( placeholder < 0 )
-					return Err( errnoError( to, "No-replace publication failed" ) );
-				struct stat reserved;
-				const bool identified = ::fstat( placeholder, &reserved ) == 0;
-				::close( placeholder );
-				if ( ::rename( path.c_str(), to.c_str() ) != 0 ) {
-					const int renameError = errno;
-					// Remove the placeholder only while it is still the file created above.
-					struct stat current;
-					if ( identified && ::lstat( to.c_str(), &current ) == 0 &&
-						 current.st_dev == reserved.st_dev && current.st_ino == reserved.st_ino )
-						::unlink( to.c_str() );
-					return Err( errnoError( path, "No-replace publication failed", renameError ) );
-				}
-				return Ok();
+				// No hard links on this file system (Haiku's BFS, FAT). The exclusive reservation
+				// can be visible briefly and a crash can leave it behind.
+				return renameOverReservation( path, to, false );
 			}
 			if ( ::unlink( path.c_str() ) != 0 ) {
 				// Publication succeeded. Never roll back the destination or request a copy
