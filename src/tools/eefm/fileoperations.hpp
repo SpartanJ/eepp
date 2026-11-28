@@ -84,9 +84,8 @@ class FileOperations {
 
 	void openTerminalHere( FileTab* tab );
 
-	/** Moves or copies dropped files to destination, resolving conflicts within one batch. */
-	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
-					bool copy = false );
+	/** Moves or copies eefm's current drag to the destination. */
+	void dropInternalFiles( const URI& destination, int paneIndex );
 
 	/** A file dropped from another application (one event per file), where it was dropped when
 	 * the backend reports it. */
@@ -192,6 +191,9 @@ class FileOperations {
 	void newTextFile( FileTab* tab );
 
 	bool validateName( const std::string& name, const URI& directory );
+
+	void dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex, bool copy,
+					std::optional<Uint16> releaseModifiers = {} );
 
 	void transferFiles( const std::vector<URI>& sources, const URI& destination, bool move,
 						int paneIndex );

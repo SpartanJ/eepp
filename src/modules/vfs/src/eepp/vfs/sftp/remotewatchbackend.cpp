@@ -451,7 +451,8 @@ class RemoteWatchBackendImpl : public std::enable_shared_from_this<RemoteWatchBa
 			flags |= agent::WatchFollowSymlinks;
 		if ( watch.options.allowOutOfScopeLinks )
 			flags |= agent::WatchAllowOutOfScopeLinks;
-		if ( watch.options.reportCrossDirectoryMoves )
+		// Like local flat watches, report leaving and arriving entries to each root.
+		if ( watch.options.recursive && watch.options.reportCrossDirectoryMoves )
 			flags |= agent::WatchReportCrossDirectoryMoves;
 		agent::Writer w;
 		std::string path = watch.root.getPath().empty() ? std::string( "/" ) : watch.root.getPath();

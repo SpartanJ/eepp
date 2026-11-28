@@ -204,6 +204,7 @@ class FileCell : public UITableCell {
 			auto& drag = FileTableView::currentDrag();
 			drag.uris = table->dragPayload ? table->dragPayload() : std::vector<URI>{};
 			drag.source = table;
+			drag.releaseModifiers.reset();
 			drag.folders = table->isFolderRow != nullptr;
 			drag.native = false;
 			for ( const auto& index : table->getSelection().indexes() ) {
@@ -284,7 +285,7 @@ class FileCell : public UITableCell {
 		}
 		FileTableView::currentDrag().native = true;
 		sNativeDragCell = this;
-		mNativeDrag = true;
+		mNativeDrag = NativeDragState::Active;
 		// The system draws the dragged files.
 		dragLabel( getUISceneNode() )->setVisible( false );
 	}
@@ -293,21 +294,25 @@ class FileCell : public UITableCell {
 	 * dropped as eefm's drag. Elsewhere the drop was the target's (eefm included, as a file drop
 	 * on Wayland, macOS and Windows), or cancelled. */
 	void endNativeDrag( bool drop ) {
-		mNativeDrag = false;
-		if ( !isDragging() )
-			return;
-		setDragging( false, drop );
-		if ( getEventDispatcher() && getEventDispatcher()->getNodeDragging() == this )
-			getEventDispatcher()->setNodeDragging( nullptr );
+		// The native callback can run before the scene processes the mouse release. Finish
+		// in the dispatcher so it uses the current hit test and releases mouse capture.
+		mNativeDrag = drop ? NativeDragState::Drop : NativeDragState::Cancel;
 	}
 
 	Uint32 onCalculateDrag( const Vector2f& position, const Uint32& flags ) override {
+		if ( mNativeDrag == NativeDragState::Drop || mNativeDrag == NativeDragState::Cancel ) {
+			const bool drop = mNativeDrag == NativeDragState::Drop;
+			mNativeDrag = NativeDragState::Inactive;
+			setDragging( false, drop );
+			getEventDispatcher()->setNodeDragging( nullptr );
+			return 1;
+		}
 		if ( isDragging() && !mDragActive && !( flags & getDragButton() ) ) {
 			cancelPendingDrag();
 			return 1;
 		}
 		// The system drag owns the release: eefm's drag waits for it to end.
-		if ( mNativeDrag && !( flags & getDragButton() ) )
+		if ( mNativeDrag == NativeDragState::Active && !( flags & getDragButton() ) )
 			return 1;
 		return UITableCell::onCalculateDrag( position, flags );
 	}
@@ -338,7 +343,7 @@ class FileCell : public UITableCell {
 			beginFileDrag();
 			startNativeDrag();
 		}
-		if ( !mNativeDrag ) {
+		if ( mNativeDrag == NativeDragState::Inactive ) {
 			auto* label = dragLabel( getUISceneNode() );
 			label->setVisible( true );
 			label->setPixelsPosition( position + PixelDensity::dpToPx( 12 ) );
@@ -376,21 +381,23 @@ class FileCell : public UITableCell {
 	Uint32 onKeyDown( const KeyEvent& event ) override {
 		// Escape cancels the drag without dropping.
 		if ( event.getKeyCode() == KEY_ESCAPE && isDragging() ) {
-			if ( mNativeDrag )
+			if ( mNativeDrag == NativeDragState::Active ) {
 				DragAndDrop::forWindow( *getUISceneNode()->getWindow() ).cancelDrag();
-			setDragging( false, false );
-			getEventDispatcher()->setNodeDragging( nullptr );
+			} else {
+				mNativeDrag = NativeDragState::Cancel;
+			}
 			return 1;
 		}
 		return UITableCell::onKeyDown( event );
 	}
 
   private:
+	enum class NativeDragState : Uint8 { Inactive, Active, Drop, Cancel };
+
 	UIWidget* mDropTarget{ nullptr };
 	Vector2f mPressPosition;
 	bool mDragActive{ false };
-	/** A system drag started with this one is in progress. */
-	bool mNativeDrag{ false };
+	NativeDragState mNativeDrag{ NativeDragState::Inactive };
 	/** The cell whose drag the system drag in progress started with, while it exists. */
 	static FileCell* sNativeDragCell;
 };

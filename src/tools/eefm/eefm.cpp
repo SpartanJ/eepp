@@ -895,6 +895,14 @@ bool App::init( const std::vector<std::string>& locations, bool forceSplit ) {
 			if ( mFileOperations->hasDroppedFiles() )
 				mFileOperations->dropExternalFiles();
 		} else if ( event->Type == InputEvent::MouseButtonUp ) {
+			if ( event->button.button == EE_BUTTON_LEFT ) {
+				auto* dragging = mUI->getEventDispatcher()->getNodeDragging();
+				if ( dragging && dragging->isType( FileTableView::CellType ) ) {
+					FileTableView::currentDrag().releaseModifiers =
+						mApp->getWindow()->getInput()->getModState() &
+						( KEYMOD_SHIFT | KEYMOD_CTRL );
+				}
+			}
 			// Side mouse buttons navigate the history.
 			if ( event->button.button == EE_BUTTON_4 )
 				mPaneManager->goBack();

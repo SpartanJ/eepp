@@ -54,8 +54,7 @@ void PlacesController::createPanel( UIWidget* parent ) {
 	};
 	mPlacesPanel->onSectionMenu = [this]( PlaceSection section ) { showSectionMenu( section ); };
 	mPlacesPanel->onFilesDropped = [this]( const PlacesPanel::Entry& entry ) {
-		mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, entry.place.uri,
-								  mApp.panes().activeIndex() );
+		mApp.fileOps().dropInternalFiles( entry.place.uri, mApp.panes().activeIndex() );
 	};
 	refresh();
 	refreshDevices();

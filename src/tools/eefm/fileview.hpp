@@ -19,6 +19,8 @@ class FileTableView;
 struct FileDrag {
 	std::vector<URI> uris;
 	FileTableView* source{ nullptr };
+	/** Shift and Control at button release, when the input backend delivered the release. */
+	std::optional<Uint16> releaseModifiers;
 	/** Every dragged item is a folder (they can be added as places). */
 	bool folders{ false };
 	/** A system drag started with it (other applications can take the files). */

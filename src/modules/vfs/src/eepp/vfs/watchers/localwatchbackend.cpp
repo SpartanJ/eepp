@@ -63,7 +63,9 @@ class LocalWatchBackendImpl : public std::enable_shared_from_this<LocalWatchBack
 		}
 
 		std::vector<efsw::WatcherOption> efswOptions;
-		if ( options.reportCrossDirectoryMoves )
+		// efsw also pairs moves between separately registered roots, reporting them to the
+		// destination only. A flat watch needs its own removal when an entry leaves the root.
+		if ( options.recursive && options.reportCrossDirectoryMoves )
 			efswOptions.emplace_back( efsw::Options::ReportCrossDirectoryMoves, 1 );
 
 		int key = optionBits( options );

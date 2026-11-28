@@ -348,6 +348,35 @@ UTEST( VFSDirectoryModel, staysLiveThroughWatchEvents ) {
 	EXPECT_EQ( 3u, model->rowCount() );
 }
 
+UTEST( VFSDirectoryModel, moveBetweenWatchedDirectoriesUpdatesBothModels ) {
+	TempDir tmp;
+	VirtualFileSystem vfs;
+	TestLoop loop;
+	const auto from = tmp.uri().withAppendedSegment( "source" );
+	const auto to = tmp.uri().withAppendedSegment( "destination" );
+	ASSERT_TRUE( waitFor( vfs.makeDir( from ) ) );
+	ASSERT_TRUE( waitFor( vfs.makeDir( to ) ) );
+	const auto file = from.withAppendedSegment( "moved.txt" );
+	ASSERT_TRUE( FileSystem::fileWrite( file.getFSPath(), std::string_view( "data" ) ) );
+	VFSDirectoryModel::Config config;
+	config.vfs = &vfs;
+	auto source = VFSDirectoryModel::New( loop, config );
+	auto destination = VFSDirectoryModel::New( loop, config );
+	source->setURI( from );
+	destination->setURI( to );
+	ASSERT_TRUE( loop.runUntil( [&] {
+		return source->loadState() == VFSDirectoryModel::LoadState::Ready &&
+			   destination->loadState() == VFSDirectoryModel::LoadState::Ready;
+	} ) );
+	ASSERT_TRUE( source->rowOf( "moved.txt" ).has_value() );
+	ASSERT_TRUE( source->watchStatus().has_value() && destination->watchStatus().has_value() );
+	auto transfer = vfs.move( file, to.withAppendedSegment( "moved.txt" ) );
+	ASSERT_TRUE( waitFor( transfer.completion() ) );
+	EXPECT_TRUE( loop.runUntil( [&] {
+		return !source->rowOf( "moved.txt" ) && destination->rowOf( "moved.txt" ).has_value();
+	} ) );
+}
+
 UTEST( VFSDirectoryModel, watchEventsKeepRowsInStepWithHiddenEntries ) {
 	// Rows are updated in place by watch events: hidden and filtered entries in between must
 	// keep the visible rows pointing at the right entries.

@@ -601,8 +601,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 		URI destination = raw->model->uri();
 		if ( row && *row < raw->model->rowCount() && raw->model->entry( *row ).isDirectory() )
 			destination = raw->model->entryURI( *row );
-		mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, destination,
-								  raw->pane->index );
+		mApp.fileOps().dropInternalFiles( destination, raw->pane->index );
 	};
 	raw->tab = pane.tabs->add( Location::displayName( uri ), view, mApp.icon( "mime-folder" ) );
 	// The new tab button would sit over a dragged tab: hidden while one moves (a press alone
@@ -621,8 +620,7 @@ FileTab* PaneManager::openTab( Pane& pane, const URI& uri, bool select ) {
 	raw->tab->on( Event::OnNodeDropped, [this, raw]( const Event* event ) {
 		const auto* drop = static_cast<const DropEvent*>( event );
 		if ( drop->getDroppedNode() && drop->getDroppedNode()->isType( FileTableView::CellType ) ) {
-			mApp.fileOps().dropFiles( FileTableView::currentDrag().uris, raw->model->uri(),
-									  raw->pane->index );
+			mApp.fileOps().dropInternalFiles( raw->model->uri(), raw->pane->index );
 		}
 	} );
 	pane.tabList.push_back( std::move( tab ) );

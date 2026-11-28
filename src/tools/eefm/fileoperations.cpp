@@ -15,6 +15,7 @@
 #include <eepp/system/applications.hpp>
 #include <eepp/system/sha1.hpp>
 #include <eepp/vfs/path.hpp>
+#include <utility>
 
 namespace eefm {
 
@@ -841,11 +842,11 @@ void FileOperations::buildContextMenu( FileTab* tab, bool background, Vector2f p
 				->setId( "add-place" );
 		}
 	} else {
+		addCreateNew();
 		if ( local ) {
 			addOpenWithMenu( menu, { tab->model->uri() }, true, std::move( applications ) );
 			menu->addSeparator();
 		}
-		addCreateNew();
 		if ( !clipboardFiles().uris.empty() ) {
 			menu->add( mUI->i18n( "eefm_paste", "Paste" ), mApp.menuIcon( "paste" ),
 					   mApp.getKeybind( "paste" ) )
@@ -1041,8 +1042,13 @@ void FileOperations::paste( FileTab* tab, std::optional<URI> into ) {
 	}
 }
 
+void FileOperations::dropInternalFiles( const URI& destination, int paneIndex ) {
+	const auto& drag = FileTableView::currentDrag();
+	dropFiles( drag.uris, destination, paneIndex, false, drag.releaseModifiers );
+}
+
 void FileOperations::dropFiles( const std::vector<URI>& uris, const URI& destination, int paneIndex,
-								bool copy ) {
+								bool copy, std::optional<Uint16> releaseModifiers ) {
 	std::vector<URI> sources;
 	for ( const auto& uri : uris ) {
 		// Dropping into the folder an item already is in, or a folder into itself, does nothing.
@@ -1056,27 +1062,48 @@ void FileOperations::dropFiles( const std::vector<URI>& uris, const URI& destina
 		transferFiles( sources, destination, false, paneIndex );
 		return;
 	}
-	auto* input = mApp.window()->getInput();
-	if ( input->isShiftPressed() ) {
+	const Uint32 mods =
+		releaseModifiers ? *releaseModifiers : mApp.window()->getInput()->getModState();
+	if ( mods & KEYMOD_SHIFT ) {
 		transferFiles( sources, destination, true, paneIndex );
 		return;
 	}
-	if ( input->isControlPressed() ) {
+	if ( mods & KEYMOD_CTRL ) {
 		transferFiles( sources, destination, false, paneIndex );
 		return;
 	}
 	UIPopUpMenu* menu = UIPopUpMenu::New();
-	menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), mApp.menuIcon( "cut" ), "Shift" )
-		->setId( "move" );
-	menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), mApp.menuIcon( "copy" ), "Ctrl" )
-		->setId( "copy" );
+	menu->setCloseOnHide( true );
+	auto* move =
+		menu->add( mUI->i18n( "eefm_move_here", "Move Here" ), mApp.menuIcon( "cut" ), "Shift" );
+	move->setId( "move" );
+	auto* copyItem =
+		menu->add( mUI->i18n( "eefm_copy_here", "Copy Here" ), mApp.menuIcon( "copy" ), "Ctrl" );
+	copyItem->setId( "copy" );
 	menu->addSeparator();
 	menu->add( mUI->i18n( "eefm_cancel", "Cancel" ), mApp.menuIcon( "action-close" ), "Esc" )
 		->setId( "cancel" );
-	menu->on( Event::OnItemClicked, [this, sources, destination, paneIndex]( const Event* event ) {
-		std::string id( event->getNode()->getId() );
-		if ( id == "move" || id == "copy" )
-			transferFiles( sources, destination, id == "move", paneIndex );
+	menu->on( Event::OnItemClicked, [this, menu, sources = std::move( sources ), destination,
+									 paneIndex]( const Event* event ) mutable {
+		const auto& id = event->getNode()->getId();
+		menu->hide();
+		if ( !sources.empty() && ( id == "move" || id == "copy" ) ) {
+			transferFiles( std::exchange( sources, {} ), destination, id == "move", paneIndex );
+		}
+	} );
+	menu->on( Event::KeyDown, [move, copyItem]( const Event* event ) {
+		const auto key = static_cast<const KeyEvent*>( event )->getKeyCode();
+		if ( key == KEY_LSHIFT || key == KEY_RSHIFT )
+			move->activate();
+		else if ( key == KEY_LCTRL || key == KEY_RCTRL )
+			copyItem->activate();
+	} );
+	menu->on( Event::OnMenuHide, [this, menu]( const Event* ) {
+		const auto* focus = mUI->getEventDispatcher()->getFocusNode();
+		if ( focus && ( focus == menu || menu->isParentOf( focus ) ) ) {
+			if ( auto* tab = mApp.panes().currentTab() )
+				tab->view->setFocus();
+		}
 	} );
 	menu->showOverMouseCursor();
 }
